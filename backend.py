@@ -45,7 +45,7 @@ COURSES = [
     {"code":"CS480","name":"Parallel Computing",   "credits":3,"prereqs":["CS301","MA301"],       "seats":12,"cat":"elective"},
     {"code":"CS499","name":"Capstone Project",     "credits":3,"prereqs":["CS401","CS450","CS460"],"seats":20,"cat":"core"},
     {"code":"CS500","name":"Universal human values", "credits":1, "prereqs":[],"seats":20,"cat":"core"}
-]
+];
 
 course_map = {c["code"]: c for c in COURSES}
 
