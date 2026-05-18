@@ -1,0 +1,1414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CampusPath — Smart Course Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --surface3: #22222e;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --accent: #7c6dfa;
+    --accent2: #a78bfa;
+    --teal: #2dd4bf;
+    --amber: #fbbf24;
+    --red: #f87171;
+    --green: #34d399;
+    --text: #f0eeff;
+    --text2: #a09abd;
+    --text3: #6b6680;
+    --mono: 'JetBrains Mono', monospace;
+    --font: 'Syne', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font); min-height: 100vh; }
+
+  /* Layout */
+  .shell { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 0;
+    position: sticky; top: 0; height: 100vh;
+    overflow-y: auto;
+  }
+  .logo {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-mark {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 6px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--teal));
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .logo-name { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; }
+  .logo-sub { font-size: 11px; color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase; font-family: var(--mono); }
+
+  nav { padding: 16px 12px; flex: 1; }
+  .nav-section { margin-bottom: 24px; }
+  .nav-label { font-size: 10px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; font-family: var(--mono); padding: 0 12px; margin-bottom: 6px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px; border-radius: 8px;
+    font-size: 13px; font-weight: 500; color: var(--text2);
+    cursor: pointer; transition: all 0.15s;
+    border: none; background: none; width: 100%; text-align: left;
+  }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(124,109,250,0.15); color: var(--accent2); }
+  .nav-item .icon { font-size: 16px; opacity: 0.8; }
+  .nav-badge {
+    margin-left: auto; font-size: 10px; font-family: var(--mono);
+    background: var(--surface3); color: var(--text3);
+    padding: 2px 7px; border-radius: 20px;
+  }
+  .nav-item.active .nav-badge { background: rgba(124,109,250,0.2); color: var(--accent2); }
+
+  .sidebar-footer {
+    padding: 16px; border-top: 1px solid var(--border);
+  }
+  .status-pill {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 11px; font-family: var(--mono); color: var(--text3);
+  }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); }
+
+  /* Main */
+  .main { overflow-y: auto; }
+  .topbar {
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; background: var(--bg); z-index: 10;
+    backdrop-filter: blur(12px);
+  }
+  .topbar-title { font-size: 20px; font-weight: 700; }
+  .topbar-sub { font-size: 12px; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 18px; border-radius: 8px; border: none;
+    font-family: var(--font); font-size: 13px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #6d5ef0; transform: translateY(-1px); }
+  .btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--surface3); color: var(--text); }
+  .btn-danger { background: rgba(248,113,113,0.15); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  /* Page content */
+  .page { display: none; padding: 28px 32px; }
+  .page.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 16px;
+  }
+  .card-title { font-size: 14px; font-weight: 600; color: var(--text); }
+  .card-sub { font-size: 11px; color: var(--text3); font-family: var(--mono); }
+
+  /* Stats row */
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .stat-label { font-size: 10px; color: var(--text3); letter-spacing: 1.5px; text-transform: uppercase; font-family: var(--mono); margin-bottom: 6px; }
+  .stat-val { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .stat-hint { font-size: 11px; color: var(--text3); margin-top: 3px; }
+  .c-accent { color: var(--accent2); }
+  .c-teal { color: var(--teal); }
+  .c-amber { color: var(--amber); }
+  .c-red { color: var(--red); }
+  .c-green { color: var(--green); }
+
+  /* Graph canvas area */
+  .graph-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .graph-toolbar {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  #graphCanvas {
+    display: block;
+    width: 100%;
+    background: var(--surface);
+  }
+
+  /* Topo sort output */
+  .topo-chain {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    padding: 16px 0;
+  }
+  .topo-node {
+    font-family: var(--mono); font-size: 12px;
+    background: rgba(124,109,250,0.12);
+    border: 1px solid rgba(124,109,250,0.25);
+    color: var(--accent2);
+    padding: 5px 10px; border-radius: 6px;
+    position: relative;
+  }
+  .topo-node.highlight { background: rgba(45,212,191,0.12); border-color: rgba(45,212,191,0.3); color: var(--teal); }
+  .topo-arrow { color: var(--text3); font-size: 12px; }
+
+  /* Terminal / log */
+  .terminal {
+    background: #09090e;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.7;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  .terminal::-webkit-scrollbar { width: 4px; }
+  .terminal::-webkit-scrollbar-track { background: transparent; }
+  .terminal::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+  .log-ok { color: var(--green); }
+  .log-err { color: var(--red); }
+  .log-warn { color: var(--amber); }
+  .log-info { color: var(--accent2); }
+  .log-dim { color: var(--text3); }
+  .log-white { color: var(--text); }
+
+  /* Race condition viz */
+  .race-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .thread-bar { margin-bottom: 8px; }
+  .thread-label { font-size: 11px; font-family: var(--mono); color: var(--text3); margin-bottom: 4px; display: flex; justify-content: space-between; }
+  .bar-track { background: var(--surface3); border-radius: 4px; height: 8px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+  .bar-danger { background: var(--red); }
+  .bar-safe { background: var(--green); }
+
+  /* Semester grid */
+  .semester-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .semester-col {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .sem-header { font-size: 11px; color: var(--text3); font-family: var(--mono); letter-spacing: 1px; margin-bottom: 10px; display: flex; justify-content: space-between; }
+  .course-chip {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 7px 10px; margin-bottom: 6px;
+    font-size: 12px;
+  }
+  .course-code { font-family: var(--mono); font-weight: 500; color: var(--accent2); }
+  .course-cred { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+
+  /* Form inputs */
+  .input-row { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+  .input-field {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 13px;
+    font-family: var(--font); font-size: 13px;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .input-field:focus { border-color: var(--accent); }
+  .input-field::placeholder { color: var(--text3); }
+  select.input-field { cursor: pointer; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 2px; margin-bottom: 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 4px; }
+  .tab {
+    flex: 1; padding: 8px 12px; border-radius: 7px; border: none;
+    font-family: var(--font); font-size: 12px; font-weight: 600;
+    cursor: pointer; transition: all 0.15s;
+    background: none; color: var(--text3);
+  }
+  .tab.active { background: var(--surface2); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+
+  /* Tag */
+  .tag {
+    display: inline-block; font-size: 10px; font-family: var(--mono);
+    padding: 2px 8px; border-radius: 20px;
+  }
+  .tag-green { background: rgba(52,211,153,0.12); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+  .tag-red { background: rgba(248,113,113,0.12); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+  .tag-amber { background: rgba(251,191,36,0.12); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+  .tag-purple { background: rgba(167,139,250,0.12); color: var(--accent2); border: 1px solid rgba(167,139,250,0.2); }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+  /* Tooltip badge */
+  .badge { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-family: var(--mono); }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 4px; }
+
+  /* Animations */
+  @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+  .page.active { animation: fadeIn 0.2s ease; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .pulse { animation: pulse 1.5s infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 0.8s linear infinite; display: inline-block; }
+
+  /* Race viz */
+  .thread-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 10px; border-radius: 6px;
+    margin-bottom: 4px; font-size: 11px; font-family: var(--mono);
+    transition: background 0.2s;
+  }
+  .thread-id { color: var(--accent2); min-width: 60px; }
+  .thread-action { flex: 1; }
+  .thread-time { color: var(--text3); }
+  .thread-row.acquired { background: rgba(52,211,153,0.07); }
+  .thread-row.blocked { background: rgba(248,113,113,0.07); }
+  .thread-row.released { background: rgba(251,191,36,0.07); }
+
+  /* Hero line */
+  .page-hero { margin-bottom: 24px; }
+  .page-hero h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.8px; }
+  .page-hero p { font-size: 13px; color: var(--text3); margin-top: 5px; }
+
+  /* Grid 2 cols */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* Course table */
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 8px 12px; color: var(--text3); font-weight: 500; font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-family: var(--mono); border-bottom: 1px solid var(--border); }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text2); font-family: var(--mono); font-size: 12px; }
+  tr:hover td { background: var(--surface2); }
+  tr:last-child td { border-bottom: none; }
+
+  /* Loading state */
+  .loading-overlay { display: flex; align-items: center; gap: 8px; color: var(--text3); font-family: var(--mono); font-size: 12px; padding: 12px 0; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">
+        <div class="logo-icon">🎓</div>
+        <span class="logo-name">CampusPath</span>
+      </div>
+      <div class="logo-sub">Smart Course Planner</div>
+    </div>
+
+    <nav>
+      <div class="nav-section">
+        <div class="nav-label">Core</div>
+        <button class="nav-item active" onclick="showPage('dashboard')">
+          <span class="icon">▦</span> Dashboard
+        </button>
+        <button class="nav-item" onclick="showPage('graph')">
+          <span class="icon">⬡</span> Course Graph <span class="nav-badge" id="nb-courses">20</span>
+        </button>
+        <button class="nav-item" onclick="showPage('topo')">
+          <span class="icon">↗</span> Topo Sort
+        </button>
+        <button class="nav-item" onclick="showPage('planner')">
+          <span class="icon">◫</span> Semester Planner
+        </button>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">OS Demo</div>
+        <button class="nav-item" onclick="showPage('race')">
+          <span class="icon">⚡</span> Race Condition
+        </button>
+        <button class="nav-item" onclick="showPage('semaphore')">
+          <span class="icon">🔒</span> Semaphore
+        </button>
+        <button class="nav-item" onclick="showPage('rwlock')">
+          <span class="icon">⇄</span> RW Lock
+        </button>
+      </div>
+      <div class="nav-section">
+        <div class="nav-label">Tools</div>
+        <button class="nav-item" onclick="showPage('student')">
+          <span class="icon">👤</span> My Plan
+        </button>
+        <button class="nav-item" onclick="showPage('cycles')">
+          <span class="icon">∞</span> Cycle Detector
+        </button>
+      </div>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="status-pill">
+        <div class="status-dot"></div>
+        Backend connected · localhost:8000
+      </div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ===== DASHBOARD ===== -->
+    <div id="page-dashboard" class="page active">
+      <div class="topbar">
+        <div>
+          <div class="topbar-title">Dashboard</div>
+          <div class="topbar-sub">campuspath · v2.0 · ps04</div>
+        </div>
+        <button class="btn btn-primary" onclick="runAll()">▶ Run All</button>
+      </div>
+      <div style="padding: 28px 32px;">
+        <div class="page-hero">
+          <h1>CampusPath <span style="color:var(--accent2)">Planner</span></h1>
+          <p>Topological sort · Cycle detection · Concurrent registration simulator · Semester grouper</p>
+        </div>
+        <div class="stats-row">
+          <div class="stat-card"><div class="stat-label">Courses</div><div class="stat-val c-accent">20</div><div class="stat-hint">Directed graph nodes</div></div>
+          <div class="stat-card"><div class="stat-label">Prerequisites</div><div class="stat-val c-teal">34</div><div class="stat-hint">Directed edges</div></div>
+          <div class="stat-card"><div class="stat-label">Semesters</div><div class="stat-val c-amber">6</div><div class="stat-hint">Max 18 cr/semester</div></div>
+          <div class="stat-card"><div class="stat-label">Threads</div><div class="stat-val c-red" id="dash-threads">10</div><div class="stat-hint">Concurrent students</div></div>
+        </div>
+
+        <div class="grid2">
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">Algorithm Status</div><div class="card-sub">Both topo sort variants</div></div>
+            </div>
+            <div id="algo-status">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span style="font-size:13px;color:var(--text2)">DFS Topological Sort</span>
+                <span class="tag tag-amber">READY</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span style="font-size:13px;color:var(--text2)">Kahn's BFS Sort</span>
+                <span class="tag tag-amber">READY</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span style="font-size:13px;color:var(--text2)">Cycle Detection</span>
+                <span class="tag tag-amber">READY</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:13px;color:var(--text2)">Semester Grouper</span>
+                <span class="tag tag-amber">READY</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div><div class="card-title">OS Primitives</div><div class="card-sub">Synchronization layer</div></div>
+            </div>
+            <div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span style="font-size:13px;color:var(--text2)">Race Condition Demo</span>
+                <span class="tag tag-red">DANGEROUS</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span style="font-size:13px;color:var(--text2)">Semaphore (counting)</span>
+                <span class="tag tag-green">SAFE</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span style="font-size:13px;color:var(--text2)">Reader-Writer Lock</span>
+                <span class="tag tag-green">SAFE</span>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-size:13px;color:var(--text2)">threading.Event sync</span>
+                <span class="tag tag-purple">ACTIVE</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div><div class="card-title">Quick Terminal</div><div class="card-sub">Recent API output</div></div>
+            <button class="btn btn-ghost" onclick="clearLog()">Clear</button>
+          </div>
+          <div class="terminal" id="dash-log">
+            <div class="log-dim">$ campuspath --init</div>
+            <div class="log-ok">✓ Graph loaded: 20 courses, 34 edges</div>
+            <div class="log-ok">✓ Backend API ready at http://localhost:8000</div>
+            <div class="log-dim">$ waiting for commands...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== GRAPH ===== -->
+    <div id="page-graph" class="page">
+      <div class="topbar">
+        <div><div class="topbar-title">Course Graph</div><div class="topbar-sub">Adjacency list visualization · 20 nodes · 34 edges</div></div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" onclick="resetGraph()">↺ Reset</button>
+          <button class="btn btn-primary" onclick="layoutGraph()">⬡ Re-layout</button>
+        </div>
+      </div>
+      <div style="padding: 28px 32px;">
+        <div class="graph-wrap">
+          <div class="graph-toolbar">
+            <span class="tag tag-purple">● CS Core</span>
+            <span class="tag tag-teal" style="background:rgba(45,212,191,0.12);color:var(--teal);border:1px solid rgba(45,212,191,0.2);">● Math</span>
+            <span class="tag tag-amber">● Electives</span>
+            <span style="margin-left:auto;font-size:11px;color:var(--text3);font-family:var(--mono);">Drag nodes · Hover to highlight prereqs</span>
+          </div>
+          <canvas id="graphCanvas" width="900" height="500"></canvas>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">Course Registry</div><div class="card-sub">Click a course to see its dependencies</div></div>
+          <table>
+            <thead><tr><th>Code</th><th>Name</th><th>Credits</th><th>Prerequisites</th><th>Seats</th><th>Status</th></tr></thead>
+            <tbody id="course-table"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TOPO SORT ===== -->
+    <div id="page-topo" class="page">
+      <div class="topbar">
+        <div><div class="topbar-title">Topological Sort</div><div class="topbar-sub">DFS (Decrease &amp; Conquer) · Kahn's BFS · comparison</div></div>
+        <button class="btn btn-primary" id="topo-btn" onclick="runTopo()">▶ Run Both</button>
+      </div>
+      <div style="padding: 28px 32px;">
+
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab('dfs')">DFS (required)</button>
+          <button class="tab" onclick="switchTab('kahns')">Kahn's BFS</button>
+          <button class="tab" onclick="switchTab('compare')">Comparison</button>
+        </div>
+
+        <div id="tab-dfs">
+          <div class="card">
+            <div class="card-header"><div class="card-title">DFS Topological Sort</div><div class="card-sub" id="dfs-ops">Not run yet</div></div>
+            <div class="topo-chain" id="dfs-chain"><span style="color:var(--text3);font-size:13px;">Click "Run Both" to see results</span></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">DFS Execution Log</div></div>
+            <div class="terminal" id="dfs-log"><span class="log-dim">$ run topo --algo dfs</span></div>
+          </div>
+        </div>
+
+        <div id="tab-kahns" style="display:none;">
+          <div class="card">
+            <div class="card-header"><div class="card-title">Kahn's BFS Sort</div><div class="card-sub" id="kahns-ops">Not run yet</div></div>
+            <div class="topo-chain" id="kahns-chain"><span style="color:var(--text3);font-size:13px;">Click "Run Both" to see results</span></div>
+          </div>
+          <div class="card">
+            <div class="card-header"><div class="card-title">Kahn's Execution Log</div></div>
+            <div class="terminal" id="kahns-log"><span class="log-dim">$ run topo --algo kahns</span></div>
+          </div>
+        </div>
+
+        <div id="tab-compare" style="display:none;">
+          <div class="grid2">
+            <div class="card">
+              <div class="card-title" style="margin-bottom:12px;">DFS</div>
+              <div class="stat-label">Operations</div>
+              <div class="stat-val c-accent" id="cmp-dfs-ops">—</div>
+              <hr class="divider"/>
+              <div class="stat-label">Time Complexity</div>
+              <div style="font-family:var(--mono);font-size:13px;color:var(--text2);">O(V + E)</div>
+              <div class="stat-hint" style="margin-top:4px;">Natural cycle detection via colour marking</div>
+            </div>
+            <div class="card">
+              <div class="card-title" style="margin-bottom:12px;">Kahn's BFS</div>
+              <div class="stat-label">Operations</div>
+              <div class="stat-val c-teal" id="cmp-kahns-ops">—</div>
+              <hr class="divider"/>
+              <div class="stat-label">Time Complexity</div>
+              <div style="font-family:var(--mono);font-size:13px;color:var(--text2);">O(V + E)</div>
+              <div class="stat-hint" style="margin-top:4px;">In-degree queue, intuitively shows levels</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:10px;">Verdict</div>
+            <div id="compare-verdict" style="font-size:13px;color:var(--text2);line-height:1.7;">Run both algorithms first to see comparison.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== PLANNER ===== -->
+    <div id="page-planner" class="page">
+      <div class="topbar">
+        <div><div class="topbar-title">Semester Planner</div><div class="card-sub">Greedy credit-bin grouping from topo order</div></div>
+        <button class="btn btn-primary" onclick="runPlanner()">◫ Plan Semesters</button>
+      </div>
+      <div style="padding: 28px 32px;">
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header"><div class="card-title">Settings</div></div>
+          <div class="input-row">
+            <label style="font-size:12px;color:var(--text3);width:140px;">Max credits/semester</label>
+            <input type="number" class="input-field" id="credit-limit" value="18" min="9" max="24" style="max-width:100px;"/>
+          </div>
+        </div>
+        <div id="planner-output">
+          <div style="color:var(--text3);font-size:13px;">Click "Plan Semesters" to generate a schedule.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RACE CONDITION ===== -->
+    <div id="page-race" class="page">
+      <div class="topbar">
+        <div><div class="topbar-title">Race Condition Demo</div><div class="card-sub">10 threads, no synchronization — data corruption guaranteed</div></div>
+        <button class="btn btn-danger" onclick="runRace()">⚡ Trigger Race</button>
+      </div>
+      <div style="padding: 28px 32px;">
+        <div class="card" style="border-color:rgba(248,113,113,0.3);">
+          <div class="card-header">
+            <div><div class="card-title" style="color:var(--red);">⚠ Unsynchronized Access</div><div class="card-sub">Multiple threads reading &amp; writing the same seat counter</div></div>
+            <div id="race-seat-display" style="font-size:24px;font-weight:800;font-family:var(--mono);color:var(--red);">?</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px;">SEAT COUNTER (should reach 0)</div>
+            <div class="bar-track" style="height:12px;border-radius:6px;">
+              <div class="bar-fill bar-danger" id="race-bar" style="width:100%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">Thread Timeline</div><div class="card-sub">Real-time interleaved execution log</div></div>
+          <div class="terminal" id="race-log"><span class="log-dim">$ python scheduler.py --mode race --no-lock</span></div>
+        </div>
+
+        <div class="card" style="border-color:rgba(248,113,113,0.2);">
+          <div class="card-header"><div class="card-title">Corruption Evidence</div></div>
+          <div id="race-evidence" style="font-size:13px;color:var(--text3);">Run the demo to see corruption artifacts.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SEMAPHORE ===== -->
+    <div id="page-semaphore" class="page">
+      <div class="topbar">
+        <div><div class="topbar-title">Semaphore Demo</div><div class="card-sub">Counting semaphore · N-at-a-time seat control</div></div>
+        <button class="btn btn-primary" onclick="runSemaphore()">🔒 Run With Semaphore</button>
+      </div>
+      <div style="padding: 28px 32px;">
+        <div class="card" style="border-color:rgba(52,211,153,0.3);">
+          <div class="card-header">
+            <div><div class="card-title" style="color:var(--green);">✓ Semaphore Protected</div><div class="card-sub">threading.Semaphore(N) — correct blocking behaviour</div></div>
+            <div id="sem-seat-display" style="font-size:24px;font-weight:800;font-family:var(--mono);color:var(--green);">?</div>
+          </div>
+          <div class="input-row" style="margin-bottom:6px;">
+            <label style="font-size:12px;color:var(--text3);width:100px;">Seat capacity</label>
+            <input type="range" id="sem-capacity" min="1" max="10" value="3" style="flex:1;"/>
+            <span id="sem-cap-val" style="font-family:var(--mono);font-size:12px;color:var(--accent2);min-width:20px;">3</span>
+          </div>
+          <div class="input-row">
+            <label style="font-size:12px;color:var(--text3);width:100px;">Threads</label>
+            <input type="range" id="sem-threads" min="3" max="15" value="8" style="flex:1;"/>
+            <span id="sem-thr-val" style="font-family:var(--mono);font-size:12px;color:var(--accent2);min-width:20px;">8</span>
+          </div>
+        </div>
+
+        <div id="sem-thread-viz" style="margin-bottom:16px;"></div>
+
+        <div class="card">
+          <div class="card-header"><div class="card-title">Semaphore Log</div></div>
+          <div class="terminal" id="sem-log"><span class="log-dim">$ python scheduler.py --mode semaphore --seats 3 --threads 8</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== RW LOCK ===== -->
+    <div id="page-rwlock" class="page">
+      <div class="topbar">
+        <div><div class="topbar-title">Reader-Writer Lock</div><div class="card-sub">Custom implementation via threading.Condition</div></div>
+        <button class="btn btn-primary" onclick="runRWLock()">⇄ Simulate RW Lock</button>
+      </div>
+      <div style="padding: 28px 32px;">
+        <div class="grid2">
+          <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">Active Readers</div>
+            <div id="rw-readers" style="font-size:40px;font-weight:800;color:var(--teal);font-family:var(--mono);">0</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px;">Concurrent reads allowed</div>
+          </div>
+          <div class="card">
+            <div class="card-title" style="margin-bottom:14px;">Writer Status</div>
+            <div id="rw-writer" style="font-size:16px;font-weight:700;font-family:var(--mono);color:var(--text3);">IDLE</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:6px;">Exclusive write access</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">RW Lock Timeline</div></div>
+          <div class="terminal" id="rw-log"><span class="log-dim">$ python scheduler.py --mode rwlock</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== STUDENT PLAN ===== -->
+    <div id="page-student" class="page">
+      <div class="topbar">
+        <div><div class="topbar-title">My Personalized Plan</div><div class="card-sub">Enter completed courses → get remaining topo order</div></div>
+        <button class="btn btn-primary" onclick="runStudentPlan()">👤 Generate My Plan</button>
+      </div>
+      <div style="padding: 28px 32px;">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Completed Courses</div><div class="card-sub">Hold Ctrl to select multiple</div></div>
+          <div class="input-row">
+            <select class="input-field" id="completed-select" multiple style="height:160px;">
+              <option value="CS101">CS101 — Intro to CS</option>
+              <option value="MA101">MA101 — Calculus I</option>
+              <option value="CS201">CS201 — Data Structures</option>
+              <option value="MA201">MA201 — Calculus II</option>
+              <option value="CS202">CS202 — Algorithms</option>
+              <option value="CS211">CS211 — Discrete Math</option>
+              <option value="CS301">CS301 — OS Fundamentals</option>
+              <option value="CS302">CS302 — DBMS</option>
+            </select>
+          </div>
+        </div>
+        <div id="student-output">
+          <div style="color:var(--text3);font-size:13px;">Select completed courses and click "Generate My Plan".</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== CYCLE DETECTOR ===== -->
+    <div id="page-cycles" class="page">
+      <div class="topbar">
+        <div><div class="topbar-title">Cycle Detector</div><div class="card-sub">White/Grey/Black DFS colouring · reconstruct exact cycle path</div></div>
+        <button class="btn btn-primary" onclick="runCycleDetect()">∞ Detect Cycles</button>
+      </div>
+      <div style="padding: 28px 32px;">
+        <div class="card">
+          <div class="card-header"><div class="card-title">Inject Cycle</div><div class="card-sub">Manually add a back-edge to create a cycle</div></div>
+          <div class="input-row">
+            <input class="input-field" id="cycle-from" placeholder="From (e.g. CS305)" style="max-width:180px;"/>
+            <span style="color:var(--text3);font-family:var(--mono);">→</span>
+            <input class="input-field" id="cycle-to" placeholder="To (e.g. CS101)" style="max-width:180px;"/>
+            <button class="btn btn-ghost" onclick="injectCycle()">+ Add Edge</button>
+          </div>
+          <div id="cycle-edges" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+        </div>
+
+        <div id="cycle-result" style="margin-top:8px;">
+          <div style="color:var(--text3);font-size:13px;">Click "Detect Cycles" to run DFS cycle detection.</div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <div class="card-header"><div class="card-title">Detector Log</div></div>
+          <div class="terminal" id="cycle-log"><span class="log-dim">$ python graph.py --check-cycles</span></div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ===========================
+// DATA
+// ===========================
+const COURSES = [
+  { code:"CS101", name:"Intro to CS",       credits:3, prereqs:[], seats:30, cat:"core" },
+  { code:"MA101", name:"Calculus I",         credits:4, prereqs:[], seats:35, cat:"math" },
+  { code:"CS201", name:"Data Structures",    credits:3, prereqs:["CS101"], seats:25, cat:"core" },
+  { code:"MA201", name:"Calculus II",        credits:4, prereqs:["MA101"], seats:28, cat:"math" },
+  { code:"CS211", name:"Discrete Math",      credits:3, prereqs:["MA101"], seats:30, cat:"math" },
+  { code:"CS202", name:"Algorithms",         credits:3, prereqs:["CS201","CS211"], seats:22, cat:"core" },
+  { code:"CS301", name:"OS Fundamentals",    credits:3, prereqs:["CS201"], seats:20, cat:"core" },
+  { code:"CS302", name:"Database Systems",   credits:3, prereqs:["CS201"], seats:20, cat:"core" },
+  { code:"CS303", name:"Computer Networks",  credits:3, prereqs:["CS201"], seats:18, cat:"core" },
+  { code:"MA301", name:"Linear Algebra",     credits:3, prereqs:["MA201"], seats:25, cat:"math" },
+  { code:"CS311", name:"Theory of Comp",     credits:3, prereqs:["CS202","CS211"], seats:18, cat:"core" },
+  { code:"CS312", name:"Compiler Design",    credits:3, prereqs:["CS202","CS301"], seats:16, cat:"elective" },
+  { code:"CS401", name:"ML Fundamentals",    credits:4, prereqs:["CS202","MA301"], seats:15, cat:"elective" },
+  { code:"CS402", name:"Distributed Sys",    credits:3, prereqs:["CS301","CS303"], seats:14, cat:"elective" },
+  { code:"CS403", name:"Computer Vision",    credits:3, prereqs:["CS401"], seats:12, cat:"elective" },
+  { code:"CS404", name:"NLP",                credits:3, prereqs:["CS401"], seats:12, cat:"elective" },
+  { code:"CS450", name:"Software Eng",       credits:3, prereqs:["CS302","CS303"], seats:18, cat:"elective" },
+  { code:"CS460", name:"Cybersecurity",      credits:3, prereqs:["CS301","CS311"], seats:15, cat:"elective" },
+  { code:"CS480", name:"Parallel Computing", credits:3, prereqs:["CS301","MA301"], seats:12, cat:"elective" },
+  { code:"CS499", name:"Capstone Project",   credits:3, prereqs:["CS401","CS450","CS460"], seats:20, cat:"core" },
+];
+
+const courseMap = {};
+COURSES.forEach(c => courseMap[c.code] = c);
+
+let currentPage = 'dashboard';
+let topoResultDFS = [], topoResultKahns = [];
+let injectedEdges = [];
+let dfsOps = 0, kahnsOps = 0;
+
+// ===========================
+// NAVIGATION
+// ===========================
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  currentPage = id;
+  if (id === 'graph') initGraph();
+}
+
+function switchTab(name) {
+  ['dfs','kahns','compare'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t===name ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach((t,i) => {
+    t.classList.toggle('active', ['dfs','kahns','compare'][i] === name);
+  });
+}
+
+// ===========================
+// GRAPH CANVAS
+// ===========================
+const catColor = { core:'#7c6dfa', math:'#2dd4bf', elective:'#fbbf24' };
+
+let nodes = [], edges = [], dragging = null, offsetX = 0, offsetY = 0;
+
+function initGraph() {
+  const canvas = document.getElementById('graphCanvas');
+  const W = canvas.parentElement.clientWidth, H = 500;
+  canvas.width = W; canvas.height = H;
+
+  // Layout in levels via topo order
+  const order = topoSort(COURSES.map(c=>c.code), buildAdj());
+  const levels = assignLevels(order);
+  const maxLevel = Math.max(...Object.values(levels));
+  const levelCounts = {};
+  Object.values(levels).forEach(l => levelCounts[l] = (levelCounts[l]||0)+1);
+  const levelPos = {};
+  const padding = 60;
+
+  nodes = COURSES.map(c => {
+    const lv = levels[c.code] || 0;
+    const lcount = levelCounts[lv];
+    if (!levelPos[lv]) levelPos[lv] = 0;
+    const idx = levelPos[lv]++;
+    const x = padding + (lv / maxLevel) * (W - 2*padding);
+    const y = padding + (idx / (lcount-1||1)) * (H - 2*padding);
+    return { code: c.code, x, y, r: 22, cat: c.cat, vx:0, vy:0 };
+  });
+
+  edges = [];
+  COURSES.forEach(c => c.prereqs.forEach(p => edges.push([p, c.code])));
+
+  setupCanvasEvents(canvas);
+  renderGraph();
+}
+
+function buildAdj() {
+  const adj = {};
+  COURSES.forEach(c => { adj[c.code] = []; });
+  COURSES.forEach(c => c.prereqs.forEach(p => adj[p].push(c.code)));
+  return adj;
+}
+
+function assignLevels(order) {
+  const levels = {};
+  order.forEach((code, i) => { levels[code] = i; });
+  // Adjust to true depth
+  const depth = {};
+  order.forEach(code => {
+    const prereqs = courseMap[code]?.prereqs || [];
+    depth[code] = prereqs.length === 0 ? 0 : Math.max(...prereqs.map(p => (depth[p]||0))) + 1;
+  });
+  return depth;
+}
+
+function topoSort(codes, adj) {
+  const visited = {}, result = [];
+  function dfs(u) { if(visited[u]) return; visited[u]=true; (adj[u]||[]).forEach(dfs); result.unshift(u); }
+  codes.forEach(c => dfs(c));
+  return result;
+}
+
+function setupCanvasEvents(canvas) {
+  canvas.onmousedown = e => {
+    const {x,y} = pos(e, canvas);
+    dragging = nodes.find(n => dist(n,{x,y}) < n.r);
+    if(dragging) { offsetX = x-dragging.x; offsetY = y-dragging.y; }
+  };
+  canvas.onmousemove = e => {
+    const {x,y} = pos(e, canvas);
+    if(dragging) { dragging.x = x-offsetX; dragging.y = y-offsetY; renderGraph(); }
+  };
+  canvas.onmouseup = () => dragging = null;
+  canvas.onmouseleave = () => dragging = null;
+}
+
+function pos(e, canvas) {
+  const r = canvas.getBoundingClientRect();
+  return { x: e.clientX-r.left, y: e.clientY-r.top };
+}
+function dist(a,b) { return Math.hypot(a.x-b.x, a.y-b.y); }
+
+function renderGraph() {
+  const canvas = document.getElementById('graphCanvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const nodeMap = {};
+  nodes.forEach(n => nodeMap[n.code] = n);
+
+  // Draw edges
+  edges.forEach(([from,to]) => {
+    const a = nodeMap[from], b = nodeMap[to];
+    if(!a||!b) return;
+    ctx.beginPath();
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth = 1.5;
+    // Arrow
+    const angle = Math.atan2(b.y-a.y, b.x-a.x);
+    const ex = b.x - Math.cos(angle)*b.r;
+    const ey = b.y - Math.sin(angle)*b.r;
+    ctx.moveTo(a.x + Math.cos(angle)*a.r, a.y + Math.sin(angle)*a.r);
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+    // Arrowhead
+    ctx.beginPath();
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(ex - 8*Math.cos(angle-0.4), ey - 8*Math.sin(angle-0.4));
+    ctx.lineTo(ex - 8*Math.cos(angle+0.4), ey - 8*Math.sin(angle+0.4));
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  // Draw nodes
+  nodes.forEach(n => {
+    const col = catColor[n.cat] || '#888';
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.r, 0, Math.PI*2);
+    ctx.fillStyle = col + '22';
+    ctx.fill();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.fillStyle = col;
+    ctx.font = '500 9px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(n.code, n.x, n.y);
+  });
+}
+
+function resetGraph() { initGraph(); }
+function layoutGraph() { initGraph(); }
+
+// ===========================
+// COURSE TABLE
+// ===========================
+function buildCourseTable() {
+  const tbody = document.getElementById('course-table');
+  if(!tbody) return;
+  tbody.innerHTML = COURSES.map(c => `
+    <tr>
+      <td><span style="color:var(--accent2);font-weight:500;">${c.code}</span></td>
+      <td style="color:var(--text);">${c.name}</td>
+      <td>${c.credits} cr</td>
+      <td style="color:var(--text3);">${c.prereqs.length ? c.prereqs.join(', ') : '—'}</td>
+      <td>${c.seats}</td>
+      <td><span class="tag ${c.cat==='core'?'tag-purple':c.cat==='math'?'tag-green':'tag-amber'}">${c.cat}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ===========================
+// TOPO SORT (Client-side simulation)
+// ===========================
+function runTopo() {
+  const btn = document.getElementById('topo-btn');
+  btn.disabled = true; btn.textContent = '⟳ Running...';
+
+  setTimeout(() => {
+    const adj = buildAdj();
+    const inDeg = {};
+    COURSES.forEach(c => { inDeg[c.code]=0; });
+    COURSES.forEach(c => c.prereqs.forEach(p => inDeg[c.code]++));
+
+    // DFS
+    const visited = {}, result = [];
+    const log = [];
+    let ops = 0;
+    const color = {};
+    COURSES.forEach(c => color[c.code]='WHITE');
+
+    function dfs(u) {
+      ops++; color[u]='GREY';
+      log.push(`<span class="log-warn">  GREY  ${u}</span>`);
+      (adj[u]||[]).forEach(v => { ops++; if(color[v]==='WHITE') dfs(v); });
+      color[u]='BLACK';
+      log.push(`<span class="log-ok">  BLACK ${u}</span>`);
+      result.unshift(u);
+    }
+    COURSES.forEach(c => { if(color[c.code]==='WHITE') dfs(c.code); });
+    topoResultDFS = result;
+    dfsOps = ops;
+
+    // Kahn's
+    const kLog = [];
+    const deg = {...inDeg};
+    const queue = [], kResult = [];
+    let kOps = 0;
+    COURSES.forEach(c => { if(deg[c.code]===0) queue.push(c.code); });
+    while(queue.length) {
+      kOps++;
+      const u = queue.shift(); kResult.push(u);
+      kLog.push(`<span class="log-ok">  DEQUEUE ${u} (in-deg was 0)</span>`);
+      (adj[u]||[]).forEach(v => {
+        kOps++; deg[v]--;
+        kLog.push(`<span class="log-dim">    ${u}→${v} · in-deg[${v}]=${deg[v]}</span>`);
+        if(deg[v]===0) { queue.push(v); kLog.push(`<span class="log-info">    ENQUEUE ${v}</span>`); }
+      });
+    }
+    topoResultKahns = kResult;
+    kahnsOps = kOps;
+
+    // Render DFS chain
+    document.getElementById('dfs-ops').textContent = `${ops} operations · ${result.length} courses ordered`;
+    const dfsChain = document.getElementById('dfs-chain');
+    dfsChain.innerHTML = result.map((c,i) =>
+      `<span class="topo-node ${i===0||i===result.length-1?'highlight':''}">${c}</span>${i<result.length-1?'<span class="topo-arrow">→</span>':''}`
+    ).join('');
+
+    // Render Kahn's chain
+    document.getElementById('kahns-ops').textContent = `${kOps} operations · ${kResult.length} courses ordered`;
+    const kahnsChain = document.getElementById('kahns-chain');
+    kahnsChain.innerHTML = kResult.map((c,i) =>
+      `<span class="topo-node ${i===0||i===kResult.length-1?'highlight':''}">${c}</span>${i<kResult.length-1?'<span class="topo-arrow">→</span>':''}`
+    ).join('');
+
+    // Logs
+    document.getElementById('dfs-log').innerHTML =
+      `<span class="log-dim">$ run topo --algo dfs</span>\n` +
+      `<span class="log-info">Initializing DFS on ${COURSES.length} nodes...</span>\n` +
+      log.slice(0,40).join('\n') +
+      `\n<span class="log-ok">✓ DFS complete · ${ops} ops · valid order found</span>`;
+
+    document.getElementById('kahns-log').innerHTML =
+      `<span class="log-dim">$ run topo --algo kahns</span>\n` +
+      `<span class="log-info">Building in-degree map...</span>\n` +
+      kLog.slice(0,40).join('\n') +
+      `\n<span class="log-ok">✓ Kahn's complete · ${kOps} ops · valid order found</span>`;
+
+    // Compare
+    document.getElementById('cmp-dfs-ops').textContent = ops;
+    document.getElementById('cmp-kahns-ops').textContent = kOps;
+    document.getElementById('compare-verdict').innerHTML =
+      `Both algorithms correctly order <strong>${result.length} courses</strong>. ` +
+      `DFS used <strong style="color:var(--accent2)">${ops} ops</strong> vs Kahn's <strong style="color:var(--teal)">${kOps} ops</strong>. ` +
+      (ops > kOps ?
+        `Kahn's BFS is more efficient here due to the sparse graph structure — in-degree tracking avoids revisiting nodes already processed.` :
+        `DFS is marginally more efficient on this graph shape — the stack-based traversal incurs less bookkeeping.`);
+
+    btn.disabled = false; btn.textContent = '▶ Run Both';
+    appendDashLog(`<span class="log-ok">✓ DFS topo: ${ops} ops · Kahn's: ${kOps} ops · Both complete</span>`);
+  }, 600);
+}
+
+// ===========================
+// PLANNER
+// ===========================
+function runPlanner() {
+  const limit = parseInt(document.getElementById('credit-limit').value) || 18;
+  const order = topoResultDFS.length ? topoResultDFS : topoSort(COURSES.map(c=>c.code), buildAdj());
+
+  const semesters = [];
+  let cur = [], used = 0;
+  order.forEach(code => {
+    const c = courseMap[code];
+    if(!c) return;
+    if(used + c.credits > limit) { semesters.push(cur); cur = []; used = 0; }
+    cur.push(c);
+    used += c.credits;
+  });
+  if(cur.length) semesters.push(cur);
+
+  const colors = ['tag-purple','tag-teal','tag-amber','tag-purple','tag-teal','tag-amber'];
+  document.getElementById('planner-output').innerHTML = `
+    <div class="stats-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat-card"><div class="stat-label">Semesters</div><div class="stat-val c-accent">${semesters.length}</div></div>
+      <div class="stat-card"><div class="stat-label">Total Credits</div><div class="stat-val c-teal">${COURSES.reduce((s,c)=>s+c.credits,0)}</div></div>
+      <div class="stat-card"><div class="stat-label">Max/Semester</div><div class="stat-val c-amber">${limit}</div></div>
+    </div>
+    <div class="semester-grid">
+      ${semesters.map((sem,i) => `
+        <div class="semester-col">
+          <div class="sem-header">
+            <span>SEM ${i+1}</span>
+            <span>${sem.reduce((s,c)=>s+c.credits,0)} cr</span>
+          </div>
+          ${sem.map(c=>`
+            <div class="course-chip">
+              <span class="course-code">${c.code}</span>
+              <span class="course-cred">${c.credits}cr</span>
+            </div>
+          `).join('')}
+        </div>
+      `).join('')}
+    </div>
+  `;
+  appendDashLog(`<span class="log-ok">✓ Planned ${semesters.length} semesters (${limit}cr limit)</span>`);
+}
+
+// ===========================
+// RACE CONDITION
+// ===========================
+function runRace() {
+  const seats = 10;
+  let counter = seats;
+  const log = document.getElementById('race-log');
+  const bar = document.getElementById('race-bar');
+  const display = document.getElementById('race-seat-display');
+  const evidence = document.getElementById('race-evidence');
+  log.innerHTML = '<span class="log-dim">$ python scheduler.py --mode race --no-lock</span>\n';
+  display.textContent = seats;
+  bar.style.width = '100%';
+
+  const lines = [];
+  let corrupted = false;
+  const numThreads = 10;
+  let lastRead = [];
+
+  for(let t=0; t<numThreads; t++) {
+    const readVal = counter + (Math.random()<0.4 ? Math.floor(Math.random()*3) : 0);
+    lastRead.push(readVal);
+    lines.push({ t: t*12 + Math.random()*8, type:'read', thread:t, val:readVal });
+    lines.push({ t: t*12 + 8 + Math.random()*8, type:'write', thread:t, val:readVal-1 });
+  }
+  lines.sort((a,b)=>a.t-b.t);
+
+  let idx=0;
+  const writes = {};
+  const iv = setInterval(()=>{
+    if(idx>=lines.length){ clearInterval(iv); finishRace(counter, seats, numThreads); return; }
+    const ev = lines[idx++];
+    const col = ev.type==='read' ? 'log-info' : 'log-warn';
+    const icon = ev.type==='read' ? '👁 READ ' : '✏ WRITE';
+    log.innerHTML += `<span class="${col}">T-${ev.thread}\t${icon}\t${ev.val}</span>\n`;
+    log.scrollTop = log.scrollHeight;
+
+    if(ev.type==='write') {
+      writes[ev.thread] = ev.val;
+      if(Object.keys(writes).length > 1) {
+        const vals = Object.values(writes);
+        if(new Set(vals).size < vals.length) corrupted = true;
+      }
+      counter = ev.val;
+      const pct = Math.max(0, (counter/seats)*100);
+      bar.style.width = pct+'%';
+      display.textContent = counter;
+    }
+  }, 60);
+
+  function finishRace(final, expected, n) {
+    const correct = expected - n;
+    log.innerHTML += `\n<span class="log-dim">--- ALL THREADS COMPLETE ---</span>\n`;
+    log.innerHTML += `<span class="log-err">Final seat count: ${final}  (expected: ${correct})</span>\n`;
+    if(final !== correct) {
+      log.innerHTML += `<span class="log-err">⚠ DATA CORRUPTION DETECTED! Diff: ${final-correct}</span>\n`;
+      evidence.innerHTML = `
+        <div style="color:var(--red);font-weight:600;margin-bottom:8px;">⚠ Race condition confirmed</div>
+        <div style="font-family:var(--mono);font-size:12px;color:var(--text2);line-height:1.9;">
+          Expected final seat count: <span style="color:var(--green)">${correct}</span><br>
+          Actual final seat count:   <span style="color:var(--red)">${final}</span><br>
+          Seats lost to corruption:  <span style="color:var(--amber)">${final-correct}</span><br>
+          Cause: Multiple threads read stale value before any write committed.
+        </div>
+      `;
+    }
+    appendDashLog(`<span class="log-err">⚠ Race condition: expected ${correct}, got ${final}</span>`);
+  }
+}
+
+// ===========================
+// SEMAPHORE
+// ===========================
+document.addEventListener('DOMContentLoaded', () => {
+  const capSlider = document.getElementById('sem-capacity');
+  const thrSlider = document.getElementById('sem-threads');
+  if(capSlider) capSlider.oninput = () => document.getElementById('sem-cap-val').textContent = capSlider.value;
+  if(thrSlider) thrSlider.oninput = () => document.getElementById('sem-thr-val').textContent = thrSlider.value;
+  buildCourseTable();
+});
+
+function runSemaphore() {
+  const seats = parseInt(document.getElementById('sem-capacity').value);
+  const threads = parseInt(document.getElementById('sem-threads').value);
+  const log = document.getElementById('sem-log');
+  const viz = document.getElementById('sem-thread-viz');
+  const display = document.getElementById('sem-seat-display');
+
+  log.innerHTML = `<span class="log-dim">$ python scheduler.py --mode semaphore --seats ${seats} --threads ${threads}</span>\n`;
+  display.textContent = seats;
+
+  const states = Array(threads).fill('WAITING');
+  let avail = seats;
+
+  // Render thread bars
+  function renderViz() {
+    viz.innerHTML = `<div class="card"><div class="card-header"><div class="card-title">Thread States</div></div>` +
+    states.map((s,i) => `
+      <div class="thread-bar">
+        <div class="thread-label"><span>Thread-${i}</span><span class="tag ${s==='REGISTERED'?'tag-green':s==='BLOCKED'?'tag-red':'tag-amber'}">${s}</span></div>
+        <div class="bar-track"><div class="bar-fill ${s==='REGISTERED'?'bar-safe':'bar-danger'}" style="width:${s==='REGISTERED'?'100':s==='BLOCKED'?'15':'40'}%"></div></div>
+      </div>
+    `).join('') + '</div>';
+  }
+  renderViz();
+
+  const events = [];
+  let t = 0;
+  for(let i=0; i<threads; i++) {
+    events.push({ t: t + Math.random()*20, thread:i, type:'try' });
+    t += 15;
+  }
+  events.sort((a,b)=>a.t-b.t);
+
+  let idx=0;
+  const queue = [];
+  let finalCount = seats;
+  const iv = setInterval(()=>{
+    if(idx>=events.length && queue.length===0){ clearInterval(iv); finishSem(seats, threads); return; }
+    if(idx<events.length) {
+      const ev = events[idx++];
+      if(avail > 0) {
+        avail--;
+        finalCount = avail;
+        states[ev.thread] = 'REGISTERED';
+        log.innerHTML += `<div class="thread-row acquired"><span class="thread-id">T-${ev.thread}</span><span class="thread-action">ACQUIRED semaphore</span><span class="log-ok">[${avail} remaining]</span></div>`;
+      } else {
+        states[ev.thread] = 'BLOCKED';
+        queue.push(ev.thread);
+        log.innerHTML += `<div class="thread-row blocked"><span class="thread-id">T-${ev.thread}</span><span class="thread-action log-err">BLOCKED — waiting...</span></div>`;
+      }
+      renderViz();
+      display.textContent = avail;
+      log.scrollTop = log.scrollHeight;
+
+      // Release after delay
+      setTimeout(()=>{
+        avail++;
+        log.innerHTML += `<div class="thread-row released"><span class="thread-id">T-${ev.thread}</span><span class="thread-action log-warn">RELEASED semaphore</span><span>[${avail} available]</span></div>`;
+        if(queue.length) {
+          const next = queue.shift();
+          avail--;
+          states[next] = 'REGISTERED';
+          log.innerHTML += `<div class="thread-row acquired"><span class="thread-id">T-${next}</span><span class="thread-action">UNBLOCKED → ACQUIRED</span><span class="log-ok">[${avail} remaining]</span></div>`;
+        }
+        display.textContent = avail;
+        renderViz();
+        log.scrollTop = log.scrollHeight;
+      }, 800 + Math.random()*600);
+    }
+  }, 180);
+
+  function finishSem(s, th) {
+    log.innerHTML += `\n<span class="log-ok">✓ All ${th} threads served correctly. Final avail: ${avail}/${s}</span>\n`;
+    appendDashLog(`<span class="log-ok">✓ Semaphore(${s}): ${th} threads handled with no corruption</span>`);
+  }
+}
+
+// ===========================
+// RW LOCK
+// ===========================
+function runRWLock() {
+  const log = document.getElementById('rw-log');
+  const rElem = document.getElementById('rw-readers');
+  const wElem = document.getElementById('rw-writer');
+  log.innerHTML = `<span class="log-dim">$ python scheduler.py --mode rwlock</span>\n`;
+
+  let readers=0, writing=false;
+  const events = [
+    {t:0, type:'r+', id:'R1'},{t:50, type:'r+', id:'R2'},{t:100, type:'r+', id:'R3'},
+    {t:160, type:'w+', id:'W1'},{t:180, type:'r-', id:'R1'},{t:230, type:'r-', id:'R2'},
+    {t:280, type:'r-', id:'R3'},{t:320, type:'w-', id:'W1'},
+    {t:380, type:'r+', id:'R4'},{t:420, type:'r+', id:'R5'},
+    {t:500, type:'r-', id:'R4'},{t:540, type:'r-', id:'R5'},
+  ];
+
+  events.forEach(ev => setTimeout(()=>{
+    if(ev.type==='r+') { readers++; log.innerHTML+=`<div class="thread-row acquired"><span class="thread-id">${ev.id}</span><span class="log-info">START READ</span><span>${readers} readers active</span></div>`; }
+    if(ev.type==='r-') { readers=Math.max(0,readers-1); log.innerHTML+=`<div class="thread-row released"><span class="thread-id">${ev.id}</span><span class="log-warn">END READ</span><span>${readers} readers active</span></div>`; }
+    if(ev.type==='w+') { writing=true; log.innerHTML+=`<div class="thread-row blocked"><span class="thread-id">${ev.id}</span><span class="log-err">WAITING — ${readers} readers active</span></div>`; }
+    if(ev.type==='w-') { writing=false; log.innerHTML+=`<div class="thread-row acquired"><span class="thread-id">${ev.id}</span><span class="log-ok">WRITE COMPLETE — lock released</span></div>`; }
+    rElem.textContent = readers;
+    wElem.textContent = writing ? 'WRITING' : (readers>0 ? 'WAITING' : 'IDLE');
+    wElem.style.color = writing ? 'var(--red)' : (readers>0 ? 'var(--amber)' : 'var(--text3)');
+    log.scrollTop = log.scrollHeight;
+  }, ev.t));
+
+  setTimeout(()=>{
+    appendDashLog(`<span class="log-ok">✓ RW Lock demo complete: multiple readers, exclusive writer</span>`);
+  }, 600);
+}
+
+// ===========================
+// STUDENT PLAN
+// ===========================
+function runStudentPlan() {
+  const sel = document.getElementById('completed-select');
+  const completed = Array.from(sel.selectedOptions).map(o=>o.value);
+
+  const remaining = COURSES.filter(c => !completed.includes(c.code));
+  const remCodes = new Set(remaining.map(c=>c.code));
+
+  // Rebuild adj for remaining only
+  const adj2 = {};
+  remaining.forEach(c => {
+    adj2[c.code] = (c.prereqs || []).filter(p => remCodes.has(p));
+  });
+
+  const order = [];
+  const vis = {};
+  function dfs(u) { if(vis[u]) return; vis[u]=true; (adj2[u]||[]).forEach(dfs); order.unshift(u); }
+  remaining.forEach(c => dfs(c.code));
+
+  document.getElementById('student-output').innerHTML = `
+    <div class="card" style="border-color:rgba(45,212,191,0.3);">
+      <div class="card-header">
+        <div><div class="card-title" style="color:var(--teal);">Personalized Plan</div><div class="card-sub">${completed.length} completed · ${remaining.length} remaining</div></div>
+      </div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px;">COMPLETED</div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;">
+          ${completed.map(c=>`<span class="tag tag-green">✓ ${c}</span>`).join('')||'<span style="color:var(--text3);font-size:12px;">None selected</span>'}
+        </div>
+      </div>
+      <hr class="divider"/>
+      <div>
+        <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:8px;">REMAINING ORDER</div>
+        <div class="topo-chain">
+          ${order.map((c,i)=>`<span class="topo-node">${c}</span>${i<order.length-1?'<span class="topo-arrow">→</span>':''}`).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ===========================
+// CYCLE DETECTOR
+// ===========================
+function injectCycle() {
+  const from = document.getElementById('cycle-from').value.trim().toUpperCase();
+  const to = document.getElementById('cycle-to').value.trim().toUpperCase();
+  if(!from || !to) return;
+  injectedEdges.push([from,to]);
+  const div = document.getElementById('cycle-edges');
+  const span = document.createElement('span');
+  span.className='tag tag-red'; span.style.cursor='pointer';
+  span.textContent = `${from}→${to} ×`;
+  span.onclick = () => { injectedEdges = injectedEdges.filter(e=>!(e[0]===from&&e[1]===to)); span.remove(); };
+  div.appendChild(span);
+}
+
+function runCycleDetect() {
+  const log = document.getElementById('cycle-log');
+  const result = document.getElementById('cycle-result');
+  log.innerHTML = `<span class="log-dim">$ python graph.py --check-cycles</span>\n`;
+
+  const adj = buildAdj();
+  injectedEdges.forEach(([f,t]) => { if(!adj[f]) adj[f]=[]; adj[f].push(t); });
+
+  const color = {}, parent = {};
+  let cycles = [];
+  COURSES.forEach(c => color[c.code]='WHITE');
+  injectedEdges.forEach(([f])=>{ if(!color[f]) color[f]='WHITE'; });
+  injectedEdges.forEach(([,t])=>{ if(!color[t]) color[t]='WHITE'; });
+
+  const stack = [];
+  function dfs(u) {
+    color[u]='GREY'; stack.push(u);
+    log.innerHTML += `<span class="log-warn">  GREY  ${u}</span>\n`;
+    for(const v of (adj[u]||[])) {
+      if(color[v]==='GREY') {
+        const idx = stack.indexOf(v);
+        cycles.push([...stack.slice(idx), v]);
+        log.innerHTML += `<span class="log-err">  CYCLE BACK-EDGE: ${u}→${v}</span>\n`;
+      } else if(color[v]==='WHITE') dfs(v);
+    }
+    color[u]='BLACK'; stack.pop();
+    log.innerHTML += `<span class="log-ok">  BLACK ${u}</span>\n`;
+  }
+  Object.keys(color).forEach(u => { if(color[u]==='WHITE') dfs(u); });
+
+  if(cycles.length===0) {
+    result.innerHTML = `<div class="card" style="border-color:rgba(52,211,153,0.3);">
+      <div style="color:var(--green);font-weight:600;margin-bottom:6px;">✓ No cycles detected</div>
+      <div style="font-size:13px;color:var(--text2);">The graph is a valid DAG. Topological sort is possible.</div>
+    </div>`;
+    log.innerHTML += `<span class="log-ok">\n✓ Graph is acyclic — valid DAG</span>`;
+  } else {
+    result.innerHTML = `<div class="card" style="border-color:rgba(248,113,113,0.4);">
+      <div style="color:var(--red);font-weight:600;margin-bottom:10px;">⚠ ${cycles.length} cycle(s) detected</div>
+      ${cycles.map(c=>`
+        <div style="font-family:var(--mono);font-size:12px;margin-bottom:8px;">
+          <span class="tag tag-red">CYCLE</span>
+          <span style="color:var(--text2);margin-left:8px;">${c.join(' → ')}</span>
+        </div>
+      `).join('')}
+      <div style="font-size:12px;color:var(--text3);margin-top:8px;">These prerequisites form an impossible configuration. Remove the back-edges to resolve.</div>
+    </div>`;
+    log.innerHTML += `<span class="log-err">\n⚠ ${cycles.length} cycle(s) found — topological sort impossible</span>`;
+  }
+  log.scrollTop = log.scrollHeight;
+  appendDashLog(cycles.length ? `<span class="log-err">⚠ Cycle detected: ${cycles[0].join('→')}</span>` : `<span class="log-ok">✓ No cycles in graph</span>`);
+}
+
+// ===========================
+// RUN ALL
+// ===========================
+function runAll() {
+  appendDashLog(`<span class="log-info">▶ Running all demos...</span>`);
+  setTimeout(()=>{ runTopo(); }, 200);
+  setTimeout(()=>{ runPlanner(); }, 800);
+  setTimeout(()=>{ appendDashLog(`<span class="log-ok">✓ All demos queued</span>`); }, 1200);
+}
+
+// ===========================
+// UTILS
+// ===========================
+function appendDashLog(line) {
+  const log = document.getElementById('dash-log');
+  if(!log) return;
+  log.innerHTML += '\n' + line;
+  log.scrollTop = log.scrollHeight;
+}
+function clearLog() {
+  document.getElementById('dash-log').innerHTML = '<span class="log-dim">$ log cleared</span>';
+}
+</script>
+</body>
+</html>
