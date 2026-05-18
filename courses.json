@@ -1,0 +1,26 @@
+{
+  "courses": [
+    {"id": "CS101", "name": "Intro to Programming",        "credits": 3, "seats": 5, "prerequisites": []},
+    {"id": "CS102", "name": "Data Structures",             "credits": 4, "seats": 5, "prerequisites": ["CS101"]},
+    {"id": "CS103", "name": "Discrete Mathematics",        "credits": 3, "seats": 5, "prerequisites": ["CS101"]},
+    {"id": "CS201", "name": "Algorithms",                  "credits": 4, "seats": 5, "prerequisites": ["CS102", "CS103"]},
+    {"id": "CS202", "name": "Computer Organization",       "credits": 3, "seats": 5, "prerequisites": ["CS101"]},
+    {"id": "CS203", "name": "Operating Systems",           "credits": 4, "seats": 5, "prerequisites": ["CS202", "CS102"]},
+    {"id": "CS204", "name": "Database Systems",            "credits": 3, "seats": 5, "prerequisites": ["CS102"]},
+    {"id": "CS301", "name": "Theory of Computation",       "credits": 3, "seats": 5, "prerequisites": ["CS201", "CS103"]},
+    {"id": "CS302", "name": "Compiler Design",             "credits": 4, "seats": 5, "prerequisites": ["CS301", "CS203"]},
+    {"id": "CS303", "name": "Computer Networks",           "credits": 3, "seats": 5, "prerequisites": ["CS203"]},
+    {"id": "CS304", "name": "Software Engineering",        "credits": 3, "seats": 5, "prerequisites": ["CS204", "CS201"]},
+    {"id": "CS305", "name": "Artificial Intelligence",     "credits": 4, "seats": 5, "prerequisites": ["CS201"]},
+    {"id": "CS306", "name": "Machine Learning",            "credits": 4, "seats": 5, "prerequisites": ["CS305", "MATH201"]},
+    {"id": "CS401", "name": "Distributed Systems",        "credits": 4, "seats": 5, "prerequisites": ["CS303", "CS203"]},
+    {"id": "CS402", "name": "Cloud Computing",             "credits": 3, "seats": 5, "prerequisites": ["CS401"]},
+    {"id": "CS403", "name": "Cybersecurity",               "credits": 3, "seats": 5, "prerequisites": ["CS303", "CS201"]},
+    {"id": "CS404", "name": "Deep Learning",               "credits": 4, "seats": 5, "prerequisites": ["CS306"]},
+    {"id": "CS405", "name": "Capstone Project",            "credits": 6, "seats": 5, "prerequisites": ["CS304", "CS401", "CS403"]},
+    {"id": "MATH101","name": "Calculus I",                 "credits": 4, "seats": 5, "prerequisites": []},
+    {"id": "MATH102","name": "Calculus II",                "credits": 4, "seats": 5, "prerequisites": ["MATH101"]},
+    {"id": "MATH201","name": "Linear Algebra",             "credits": 3, "seats": 5, "prerequisites": ["MATH101"]},
+    {"id": "MATH202","name": "Probability & Statistics",   "credits": 3, "seats": 5, "prerequisites": ["MATH102"]}
+  ]
+}
